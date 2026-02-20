@@ -199,7 +199,7 @@ Ensure the phone number is between 9 and 15 digits. The plugin accepts local for
 
 ## Support
 
-- Email: support@snippe.sh
+- Email: info@ghala.io
 - Documentation: https://docs.snippe.sh
 
 ## License
