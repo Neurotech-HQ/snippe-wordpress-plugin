@@ -143,6 +143,15 @@ function snippe_valid_order_statuses_for_payment($statuses, $order) {
 }
 
 /**
+ * Allow payment_complete() to work from our custom status
+ */
+add_filter('woocommerce_valid_order_statuses_for_payment_complete', 'snippe_valid_order_statuses_for_payment_complete');
+function snippe_valid_order_statuses_for_payment_complete($statuses) {
+    $statuses[] = 'snippe-pending';
+    return $statuses;
+}
+
+/**
  * Load plugin textdomain
  */
 add_action('init', 'snippe_load_textdomain');
