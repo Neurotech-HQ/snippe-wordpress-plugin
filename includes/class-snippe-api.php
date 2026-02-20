@@ -125,10 +125,17 @@ class Snippe_API {
             $args['body'] = wp_json_encode($data);
         }
         
-        // Log request
+        // Log request (redact sensitive fields)
         Snippe_Logger::log('API Request: ' . $method . ' ' . $url);
         if (!empty($data)) {
-            Snippe_Logger::log('Request Data: ' . wp_json_encode($data));
+            $log_data = $data;
+            if (isset($log_data['phone_number'])) {
+                $log_data['phone_number'] = substr($log_data['phone_number'], 0, 5) . '***';
+            }
+            if (isset($log_data['customer']['email'])) {
+                $log_data['customer']['email'] = '***@***';
+            }
+            Snippe_Logger::log('Request Data: ' . wp_json_encode($log_data));
         }
         
         $response = wp_remote_request($url, $args);

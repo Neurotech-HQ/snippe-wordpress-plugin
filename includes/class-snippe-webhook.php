@@ -53,10 +53,10 @@ class Snippe_Webhook {
         $gateway = new WC_Gateway_Snippe();
         $webhook_secret = $gateway->get_option('webhook_secret');
         
-        // Verify signature if webhook secret is set
-        if (!empty($webhook_secret) && !empty($signature)) {
-            if (!Snippe_API::verify_webhook_signature($payload, $signature, $webhook_secret)) {
-                Snippe_Logger::log('Invalid webhook signature');
+        // Verify signature if webhook secret is configured
+        if (!empty($webhook_secret)) {
+            if (empty($signature) || !Snippe_API::verify_webhook_signature($payload, $signature, $webhook_secret)) {
+                Snippe_Logger::log('Invalid or missing webhook signature');
                 status_header(401);
                 exit('Invalid signature');
             }
@@ -174,22 +174,8 @@ class Snippe_Webhook {
         
         $order->add_order_note($note);
         
-        // Set transaction ID
-        $order->set_transaction_id($payment_reference);
-        
-        // Set date paid
-        $order->set_date_paid(time());
-        
-        // Change status to processing/completed
-        // WooCommerce will automatically choose between processing and completed based on product types
-        if ($order->has_downloadable_item()) {
-            $order->update_status('completed', __('Payment received via Snippe.', 'snippe-payment-gateway'));
-        } else {
-            $order->update_status('processing', __('Payment received via Snippe.', 'snippe-payment-gateway'));
-        }
-        
-        // Explicitly save the order
-        $order->save();
+        // Mark payment complete (handles status, stock reduction, transaction ID, and date_paid)
+        $order->payment_complete($payment_reference);
         
         Snippe_Logger::log('Payment completed for order: ' . $order->get_id() . ' - New status: ' . $order->get_status());
     }
@@ -217,7 +203,7 @@ class Snippe_Webhook {
             return;
         }
         
-        // Update order status
+        // Update order status (update_status calls save internally)
         $order->update_status(
             'failed',
             sprintf(
@@ -225,9 +211,7 @@ class Snippe_Webhook {
                 $failure_reason
             )
         );
-        
-        $order->save();
-        
+
         Snippe_Logger::log('Payment failed for order: ' . $order->get_id());
     }
     
@@ -253,14 +237,12 @@ class Snippe_Webhook {
             return;
         }
         
-        // Update order status
+        // Update order status (update_status calls save internally)
         $order->update_status(
             'cancelled',
             __('Snippe payment expired.', 'snippe-payment-gateway')
         );
-        
-        $order->save();
-        
+
         Snippe_Logger::log('Payment expired for order: ' . $order->get_id());
     }
     
@@ -286,14 +268,12 @@ class Snippe_Webhook {
             return;
         }
         
-        // Update order status
+        // Update order status (update_status calls save internally)
         $order->update_status(
             'cancelled',
             __('Snippe payment was voided/cancelled.', 'snippe-payment-gateway')
         );
-        
-        $order->save();
-        
+
         Snippe_Logger::log('Payment voided for order: ' . $order->get_id());
     }
     

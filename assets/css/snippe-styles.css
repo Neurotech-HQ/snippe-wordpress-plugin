@@ -70,16 +70,6 @@
     margin: 0.5em 0;
 }
 
-.snippe-webhook-url {
-    display: inline-block;
-    padding: 5px 10px;
-    background: #f1f1f1;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 12px;
-    margin: 5px 0;
-}
-
 /* Payment Method Icons */
 .payment_method_snippe .payment-method-icons {
     display: inline-flex;

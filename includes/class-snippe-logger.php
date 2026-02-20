@@ -10,7 +10,14 @@ if (!defined('ABSPATH')) {
 }
 
 class Snippe_Logger {
-    
+
+    /**
+     * Cached logging enabled flag
+     *
+     * @var bool|null
+     */
+    private static $logging_enabled = null;
+
     /**
      * Log message
      *
@@ -18,33 +25,35 @@ class Snippe_Logger {
      * @param string $level Log level
      */
     public static function log($message, $level = 'info') {
-        // Check if logging is enabled
-        $gateway = new WC_Gateway_Snippe();
-        $logging_enabled = $gateway->get_option('logging');
-        
-        if ($logging_enabled !== 'yes') {
+        if (self::$logging_enabled === null) {
+            $settings = get_option('woocommerce_snippe_settings', array());
+            self::$logging_enabled = isset($settings['logging']) && $settings['logging'] === 'yes';
+        }
+
+        if (!self::$logging_enabled) {
             return;
         }
-        
-        // Use WooCommerce logger
-        if (function_exists('wc_get_logger')) {
-            $logger = wc_get_logger();
-            $context = array('source' => 'snippe-payment-gateway');
-            
-            switch ($level) {
-                case 'error':
-                    $logger->error($message, $context);
-                    break;
-                case 'warning':
-                    $logger->warning($message, $context);
-                    break;
-                case 'debug':
-                    $logger->debug($message, $context);
-                    break;
-                default:
-                    $logger->info($message, $context);
-                    break;
-            }
+
+        if (!function_exists('wc_get_logger')) {
+            return;
+        }
+
+        $logger = wc_get_logger();
+        $context = array('source' => 'snippe-payment-gateway');
+
+        switch ($level) {
+            case 'error':
+                $logger->error($message, $context);
+                break;
+            case 'warning':
+                $logger->warning($message, $context);
+                break;
+            case 'debug':
+                $logger->debug($message, $context);
+                break;
+            default:
+                $logger->info($message, $context);
+                break;
         }
     }
 }

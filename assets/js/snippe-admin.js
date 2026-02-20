@@ -57,29 +57,6 @@
             if (descriptions[paymentType]) {
                 $description.text(descriptions[paymentType]);
             }
-        },
-        
-        /**
-         * Copy webhook URL to clipboard
-         */
-        copyWebhookUrl: function(e) {
-            e.preventDefault();
-            var $this = $(this);
-            var url = $this.data('url');
-            
-            // Create temporary input
-            var $temp = $('<input>');
-            $('body').append($temp);
-            $temp.val(url).select();
-            document.execCommand('copy');
-            $temp.remove();
-            
-            // Show feedback
-            var originalText = $this.text();
-            $this.text('Copied!');
-            setTimeout(function() {
-                $this.text(originalText);
-            }, 2000);
         }
     };
     

@@ -12,15 +12,16 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 
 ## Features
 
-- ✅ Multiple payment methods (Mobile Money, Card, QR Code)
-- ✅ Automatic payment status updates via webhooks
-- ✅ Test and live mode support
-- ✅ Comprehensive logging for debugging
-- ✅ Customer choice of payment method at checkout
-- ✅ Secure API integration with Snippe
-- ✅ Order metadata tracking
-- ✅ Idempotency support to prevent duplicate payments
-- ✅ Full WooCommerce integration
+- Multiple payment methods (Mobile Money, Card, QR Code)
+- Automatic payment status updates via webhooks
+- Test and live mode support
+- Comprehensive logging for debugging
+- Customer choice of payment method at checkout
+- Secure API integration with Snippe
+- Order metadata tracking
+- Idempotency support to prevent duplicate payments
+- WooCommerce HPOS (High-Performance Order Storage) compatible
+- WordPress multisite compatible
 
 ## Requirements
 
@@ -33,10 +34,10 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 ## Installation
 
 1. Download the plugin ZIP file
-2. Go to WordPress Admin → Plugins → Add New
+2. Go to WordPress Admin > Plugins > Add New
 3. Click "Upload Plugin" and select the ZIP file
 4. Click "Install Now" and then "Activate"
-5. Go to WooCommerce → Settings → Payments
+5. Go to WooCommerce > Settings > Payments
 6. Click on "Snippe" to configure
 
 ## Configuration
@@ -44,13 +45,13 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 ### 1. Get Your API Keys
 
 1. Log in to your [Snippe Dashboard](https://snippe.sh)
-2. Navigate to Settings → API Keys
-3. Copy your API keys
-4. Copy your Webhook Secret Key (optional)
+2. Navigate to Settings > API Keys
+3. Copy your API key
+4. Copy your Webhook Secret (optional, used to verify webhook signatures)
 
 ### 2. Configure the Plugin
 
-1. Go to WooCommerce → Settings → Payments → Snippe
+1. Go to WooCommerce > Settings > Payments > Snippe
 2. Enable the payment gateway
 3. Configure the following settings:
 
@@ -59,35 +60,25 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
    - **Test Mode**: Enable for testing with test API keys
    - **Test API Key**: Your Snippe test API key
    - **Live API Key**: Your Snippe production API key
-   - **Webhook Secret**: Your webhook signing secret (optional)
+   - **Webhook Secret**: Secret used to verify incoming webhook notifications (optional)
    - **Default Payment Type**: Choose default payment method or let customers choose
    - **Order Prefix**: Prefix for order references sent to Snippe (default: "WC-")
-   - **Enable Logging**: Enable for debugging (logs saved in WooCommerce → Status → Logs)
+   - **Enable Logging**: Enable for debugging (logs saved in WooCommerce > Status > Logs)
 4. Save changes
 
-### 3. Configure Webhooks
+### Webhooks
 
-1. Copy your webhook URL from the settings page:
+The webhook URL is automatically included in every payment request sent to Snippe. There is no need to configure a webhook URL on the Snippe dashboard.
 
-   ```
-   https://yourdomain.com/wc-api/snippe_webhook/
-   ```
-2. Go to your [Snippe Dashboard](https://snippe.sh) → Settings → Webhooks
-3. Add the webhook URL
-4. Select the following events:
+If you have a webhook secret configured in your Snippe account, enter it in the **Webhook Secret** field so the plugin can verify that incoming notifications are genuinely from Snippe.
 
-   - `payment.completed`
-   - `payment.failed`
-   - `payment.expired`
-   - `payment.voided`
-5. Save the webhook configuration
+### Important: Classic Checkout Required
 
-Note:
------
+The plugin does not currently support the block-based checkout (the default in newer WooCommerce versions). To use it, remove the block-based checkout from your checkout page and add the classic shortcode instead:
 
-The plugin does not currently support block based payment, which is the default mode on the checkout page, so To use it use you have to first remove everything from the checkout page and then add the shortcode below to the checkout page to use the plugin.
-
-``[woocommerce_checkout]``
+```
+[woocommerce_checkout]
+```
 
 ## Usage
 
@@ -95,26 +86,26 @@ The plugin does not currently support block based payment, which is the default 
 
 #### Mobile Money Payment
 
-1. Select "Snippe" as payment method at checkout
-2. Enter mobile money phone number
-3. Complete order
-4. Receive USSD prompt on phone
-5. Enter PIN to complete payment
+1. Select "Snippe" as the payment method at checkout
+2. Enter your mobile money phone number
+3. Place the order
+4. Receive a USSD prompt on your phone
+5. Enter your PIN to complete payment
 
 #### Card Payment
 
-1. Select "Snippe" as payment method at checkout
-2. Choose "Credit/Debit Card" option
-3. Complete order
-4. Redirected to secure payment page
+1. Select "Snippe" as the payment method at checkout
+2. Choose "Credit/Debit Card" (if customer choice is enabled)
+3. Place the order
+4. You will be redirected to a secure payment page
 5. Enter card details to complete payment
 
 #### QR Code Payment
 
-1. Select "Snippe" as payment method at checkout
-2. Choose "QR Code" option
-3. Complete order
-4. Scan QR code with mobile banking app
+1. Select "Snippe" as the payment method at checkout
+2. Choose "QR Code" (if customer choice is enabled)
+3. Place the order
+4. Scan the QR code with your mobile banking app
 5. Approve payment to complete
 
 ### For Store Owners
@@ -129,11 +120,9 @@ Payment details are displayed in the order admin page:
 - Channel Information (provider, type)
 - Settlement Information (gross, fees, net)
 
-#### Check Order Status
+#### Order Statuses
 
-Order statuses:
-
-- **Awaiting Snippe Payment**: Payment initiated, awaiting confirmation
+- **Awaiting Snippe Payment**: Payment initiated, waiting for confirmation
 - **Processing**: Payment completed successfully
 - **Failed**: Payment failed
 - **Cancelled**: Payment expired or voided
@@ -142,100 +131,76 @@ Order statuses:
 
 Enable logging in settings to view detailed API logs:
 
-1. Go to WooCommerce → Status → Logs
+1. Go to WooCommerce > Status > Logs
 2. Select the log file starting with "snippe-payment-gateway"
+
+Sensitive data (phone numbers, emails) is automatically redacted in logs.
 
 ## Testing
 
-Note: Snippe currently does not support sandbox mode, so the testing section is retain for future use case, in the meantime just disable the testing and your live API Key
+Snippe currently does not support sandbox mode. Disable test mode and use your live API key for real transactions.
 
-### Test Mode
+## Webhook Events
 
-1. Enable "Test Mode" in plugin settings
-2. Use your Test API Key
-3. Use test phone numbers and card details provided by Snippe
+The plugin handles the following webhook events automatically:
 
-### Test Payment Flow
+| Event | Order Status | Description |
+|-------|-------------|-------------|
+| `payment.completed` | Processing | Payment successful, stock reduced |
+| `payment.failed` | Failed | Payment failed with reason |
+| `payment.expired` | Cancelled | Payment expired |
+| `payment.voided` | Cancelled | Payment voided/cancelled |
 
-1. Create a test product
-2. Add to cart and proceed to checkout
-3. Select Snippe as payment method
-4. Complete payment using test credentials
-5. Verify order status updates correctly
-
-## Webhooks
-
-The plugin handles the following webhook events:
-
-### payment.completed
-
-Triggered when payment is successful. Updates order status to "Processing" and marks as paid.
-
-### payment.failed
-
-Triggered when payment fails. Updates order status to "Failed" with failure reason.
-
-### payment.expired
-
-Triggered when payment expires. Updates order status to "Cancelled".
-
-### payment.voided
-
-Triggered when payment is voided. Updates order status to "Cancelled".
-
-## Currency Support
-
-The plugin supports the following currencies:
+## Supported Currencies
 
 - TZS (Tanzanian Shilling)
 
+## Phone Number Formats
+
+The plugin accepts phone numbers in multiple formats and normalizes them automatically:
+
+- `0782123456` (local format, converted to `255782123456`)
+- `255782123456` (international format)
+- `+255782123456` (with plus prefix)
+
 ## Troubleshooting
-
-### Webhook Not Receiving Events
-
-1. Verify webhook URL is correct: `https://yourdomain.com/wc-api/snippe_webhook/`
-2. Check SSL certificate is valid (webhooks require HTTPS)
-3. Verify webhook secret is configured correctly
-4. Check server firewall allows incoming connections
-5. Enable logging and check logs for webhook attempts
 
 ### Payment Not Completing
 
 1. Enable logging in plugin settings
-2. Check WooCommerce logs for API errors
+2. Check WooCommerce logs (WooCommerce > Status > Logs)
 3. Verify API keys are correct
 4. Check order notes for error messages
-5. Verify webhook is configured correctly
+
+### Webhook Issues
+
+1. Ensure your site is accessible over HTTPS
+2. Check server firewall allows incoming POST requests
+3. If using a webhook secret, verify it matches your Snippe account
+4. Enable logging and check logs for webhook attempts
 
 ### Phone Number Validation Error
 
-Ensure phone numbers are in format: `255781000000` (country code + number, no spaces or special characters)
+Ensure the phone number is between 9 and 15 digits. The plugin accepts local format (e.g., `0782123456`) and international format (e.g., `255782123456`).
 
 ### API Connection Errors
 
 1. Verify your server can make outbound HTTPS connections
-2. Check if firewall is blocking API requests
+2. Check if a firewall is blocking requests to `api.snippe.sh`
 3. Verify API keys are valid and not expired
-4. Check Snippe API status
-
-## Support
-
-For plugin support:
-
-- Email: support@snippe.sh
-- Documentation: https://docs.snippe.sh
-
-For WooCommerce issues:
-
-- WooCommerce Support: https://woocommerce.com/support/
 
 ## Security
 
 - All API communications use HTTPS
-- API keys are stored securely in WordPress database
-- Webhook signatures are verified using HMAC SHA256
+- API keys are stored securely in the WordPress database
+- Webhook signatures are verified using HMAC SHA256 (when a webhook secret is configured, requests without a valid signature are rejected)
 - Idempotency keys prevent duplicate payments
-- Sensitive data is logged only when logging is enabled
+- Sensitive customer data is redacted in logs
+
+## Support
+
+- Email: support@snippe.sh
+- Documentation: https://docs.snippe.sh
 
 ## License
 

@@ -47,13 +47,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
     private $payment_type;
     
     /**
-     * Payment Action
-     *
-     * @var string
-     */
-    private $payment_action;
-    
-    /**
      * Constructor
      */
     public function __construct() {
@@ -84,7 +77,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         $this->api_key = $this->test_mode ? $this->get_option('test_api_key') : $this->get_option('live_api_key');
         $this->webhook_secret = $this->get_option('webhook_secret');
         $this->payment_type = $this->get_option('payment_type', 'mobile');
-        $this->payment_action = $this->get_option('payment_action', 'authorize');
         
         // Initialize API
         $this->api = new Snippe_API($this->api_key, $this->test_mode);
@@ -146,11 +138,9 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
             'webhook_secret' => array(
                 'title'       => __('Webhook Secret', 'snippe-payment-gateway'),
                 'type'        => 'password',
-                'description' => sprintf(
-                    __('Your webhook URL is: %s', 'snippe-payment-gateway'),
-                    '<code>' . home_url('/wc-api/snippe_webhook/') . '</code>'
-                ),
+                'description' => __('Enter your webhook secret from your Snippe account. This is used to verify incoming webhook notifications.', 'snippe-payment-gateway'),
                 'default'     => '',
+                'desc_tip'    => true,
             ),
             'payment_type' => array(
                 'title'       => __('Default Payment Type', 'snippe-payment-gateway'),
@@ -163,16 +153,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                     'card'        => __('Card Payment', 'snippe-payment-gateway'),
                     'dynamic-qr'  => __('QR Code', 'snippe-payment-gateway'),
                     'customer_choice' => __('Let Customer Choose', 'snippe-payment-gateway'),
-                ),
-            ),
-            'payment_action' => array(
-                'title'       => __('Payment Action', 'snippe-payment-gateway'),
-                'type'        => 'select',
-                'description' => __('Choose whether to capture payment immediately or authorize only.', 'snippe-payment-gateway'),
-                'default'     => 'authorize',
-                'desc_tip'    => true,
-                'options'     => array(
-                    'authorize' => __('Authorize and Capture', 'snippe-payment-gateway'),
                 ),
             ),
             'order_prefix' => array(
@@ -223,18 +203,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                     </p>
                 </div>
             </fieldset>
-            
-            <script type="text/javascript">
-                jQuery(function($) {
-                    $('#snippe_payment_type').on('change', function() {
-                        if ($(this).val() === 'mobile') {
-                            $('#snippe-mobile-fields').slideDown();
-                        } else {
-                            $('#snippe-mobile-fields').slideUp();
-                        }
-                    });
-                });
-            </script>
             <?php
         } elseif ($this->payment_type === 'mobile') {
             ?>
@@ -339,12 +307,9 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         $order->update_meta_data('_snippe_payment_reference', $payment['reference']);
         $order->update_meta_data('_snippe_payment_type', $payment_type);
         
-        // Update order status
+        // Update order status (stock will be reduced when payment is confirmed and order moves to processing/completed)
         $order->update_status('snippe-pending', __('Awaiting Snippe payment confirmation.', 'snippe-payment-gateway'));
-        
-        // Reduce stock
-        wc_reduce_stock_levels($order_id);
-        
+
         // Empty cart
         WC()->cart->empty_cart();
         
@@ -404,7 +369,7 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         $data = array(
             'payment_type' => $payment_type,
             'details' => array(
-                'amount'   => (int) $order->get_total(), // TZS amount as-is (no cents conversion)
+                'amount'   => (int) round((float) $order->get_total()),
                 'currency' => $order->get_currency(),
             ),
             'phone_number' => $phone_number,
@@ -415,7 +380,7 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
             ),
             'webhook_url' => home_url('/wc-api/snippe_webhook/'),
             'metadata' => array(
-                'order_id'     => $this->get_option('order_prefix', 'WC-') . $order->get_id(),
+                'order_id'     => sanitize_text_field($this->get_option('order_prefix', 'WC-')) . $order->get_id(),
                 'customer_id'  => $order->get_customer_id(),
                 'order_number' => $order->get_order_number(),
             ),
@@ -525,19 +490,19 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
      * @return string Normalized phone number
      */
     private function normalize_phone_number($phone) {
-        // Remove all non-numeric characters
+        // Remove all non-numeric characters except leading +
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         // If starts with 0, replace with 255 (Tanzania country code)
         if (substr($phone, 0, 1) === '0') {
             $phone = '255' . substr($phone, 1);
         }
-        
-        // If doesn't start with country code, add 255
-        if (strlen($phone) < 12 && !in_array(substr($phone, 0, 3), array('255', '254', '256'))) {
+
+        // Only add country code for short numbers that don't already have a recognized prefix
+        if (strlen($phone) <= 9) {
             $phone = '255' . $phone;
         }
-        
+
         return $phone;
     }
     

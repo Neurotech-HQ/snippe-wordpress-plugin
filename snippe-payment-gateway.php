@@ -28,9 +28,10 @@ define('SNIPPE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SNIPPE_API_BASE_URL', 'https://api.snippe.sh');
 
 /**
- * Check if WooCommerce is active
+ * Check if WooCommerce is active (supports multisite network activation)
  */
-if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))
+    && !array_key_exists('woocommerce/woocommerce.php', get_site_option('active_sitewide_plugins', array()))) {
     return;
 }
 
@@ -138,15 +139,6 @@ function snippe_add_order_statuses($order_statuses) {
 add_filter('woocommerce_valid_order_statuses_for_payment', 'snippe_valid_order_statuses_for_payment', 10, 2);
 function snippe_valid_order_statuses_for_payment($statuses, $order) {
     $statuses[] = 'snippe-pending';
-    return $statuses;
-}
-
-/**
- * Mark custom status as unpaid
- */
-add_filter('woocommerce_order_is_paid_statuses', 'snippe_unpaid_order_statuses');
-function snippe_unpaid_order_statuses($statuses) {
-    // Don't include snippe-pending in paid statuses, so it's considered unpaid
     return $statuses;
 }
 
