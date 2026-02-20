@@ -1,0 +1,128 @@
+/* Snippe Payment Gateway Styles */
+
+.payment_method_snippe img {
+    max-height: 30px;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+#snippe-payment-type {
+    margin-bottom: 20px;
+}
+
+#snippe-payment-type select,
+#snippe-payment-type input {
+    width: 100% !important;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#snippe-mobile-fields {
+    margin-top: 15px;
+}
+
+#snippe-mobile-fields input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#snippe-mobile-fields small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.woocommerce-order-snippe-payment-details {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f8f8;
+    border-radius: 4px;
+}
+
+.woocommerce-order-snippe-payment-details h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+.snippe-payment-info {
+    margin: 10px 0;
+}
+
+.snippe-payment-info strong {
+    display: inline-block;
+    width: 150px;
+}
+
+/* Admin Styles */
+.snippe-admin-notice {
+    padding: 15px;
+    margin: 20px 0;
+    border-left: 4px solid #0073aa;
+    background: #fff;
+}
+
+.snippe-admin-notice p {
+    margin: 0.5em 0;
+}
+
+.snippe-webhook-url {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #f1f1f1;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+    margin: 5px 0;
+}
+
+/* Payment Method Icons */
+.payment_method_snippe .payment-method-icons {
+    display: inline-flex;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.payment_method_snippe .payment-method-icons img {
+    max-height: 24px;
+    width: auto;
+}
+
+/* Loading State */
+.snippe-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.snippe-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: snippe-spin 1s linear infinite;
+}
+
+@keyframes snippe-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .snippe-payment-info strong {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
