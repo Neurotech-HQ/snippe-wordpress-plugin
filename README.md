@@ -19,7 +19,6 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 - ✅ Customer choice of payment method at checkout
 - ✅ Secure API integration with Snippe
 - ✅ Order metadata tracking
-- ✅ Multi-currency support
 - ✅ Idempotency support to prevent duplicate payments
 - ✅ Full WooCommerce integration
 
@@ -237,20 +236,6 @@ For WooCommerce issues:
 - Webhook signatures are verified using HMAC SHA256
 - Idempotency keys prevent duplicate payments
 - Sensitive data is logged only when logging is enabled
-
-## Changelog
-
-### 1.0.0 - 2026-02-20
-
-* Initial release
-* Mobile Money payment support
-* Card payment support
-* QR Code payment support
-* Webhook integration
-* Test and live mode
-* Comprehensive logging
-* Customer payment method selection
-* Multi-currency support
 
 ## License
 
