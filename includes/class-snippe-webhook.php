@@ -180,13 +180,12 @@ class Snippe_Webhook {
         // Set date paid
         $order->set_date_paid(time());
         
-        // Change status to processing/completed
-        // WooCommerce will automatically choose between processing and completed based on product types
-        if ($order->has_downloadable_item()) {
-            $order->update_status('completed', __('Payment received via Snippe.', 'snippe-payment-gateway'));
-        } else {
-            $order->update_status('processing', __('Payment received via Snippe.', 'snippe-payment-gateway'));
-        }
+        // Get gateway settings for successful order status
+        $gateway = new WC_Gateway_Snippe();
+        $successful_status = $gateway->get_option('successful_order_status', 'processing');
+        
+        // Update order status based on gateway settings
+        $order->update_status($successful_status, __('Payment received via Snippe.', 'snippe-payment-gateway'));
         
         // Explicitly save the order
         $order->save();
