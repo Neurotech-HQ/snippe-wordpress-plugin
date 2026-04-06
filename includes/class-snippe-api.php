@@ -26,21 +26,12 @@ class Snippe_API {
     private $base_url;
     
     /**
-     * Test mode
-     *
-     * @var bool
-     */
-    private $test_mode;
-    
-    /**
      * Constructor
      *
      * @param string $api_key API key
-     * @param bool $test_mode Test mode flag
      */
-    public function __construct($api_key, $test_mode = false) {
+    public function __construct($api_key) {
         $this->api_key = $api_key;
-        $this->test_mode = $test_mode;
         $this->base_url = SNIPPE_API_BASE_URL;
     }
     
