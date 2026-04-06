@@ -118,6 +118,64 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Block Checkout - Snippe Fields */
+.snippe-blocks-content {
+    padding: 0;
+}
+
+.snippe-blocks-description {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: #333;
+}
+
+.snippe-blocks-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.snippe-blocks-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.snippe-blocks-required {
+    color: #cc1818;
+}
+
+.snippe-blocks-input,
+.snippe-blocks-select {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.snippe-blocks-input:focus,
+.snippe-blocks-select:focus {
+    border-color: #007cba;
+    outline: 1px solid #007cba;
+}
+
+.snippe-blocks-help {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #757575;
+    line-height: 1.4;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .snippe-payment-info strong {
