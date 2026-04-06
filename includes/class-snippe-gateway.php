@@ -19,13 +19,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
     private $api;
     
     /**
-     * Test mode
-     *
-     * @var bool
-     */
-    private $test_mode;
-    
-    /**
      * API Key
      *
      * @var string
@@ -69,9 +62,6 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
             'refunds',
         );
         
-        // Add support for block checkout
-        add_action('woocommerce_blocks_loaded', array($this, 'register_block_support'));
-        
         // Load settings
         $this->init_form_fields();
         $this->init_settings();
@@ -80,14 +70,13 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->enabled = $this->get_option('enabled');
-        $this->test_mode = 'yes' === $this->get_option('test_mode');
-        $this->api_key = $this->test_mode ? $this->get_option('test_api_key') : $this->get_option('live_api_key');
+        $this->api_key = $this->get_option('api_key');
         $this->webhook_secret = $this->get_option('webhook_secret');
         $this->payment_type = $this->get_option('payment_type', 'mobile');
         $this->payment_action = $this->get_option('payment_action', 'authorize');
         
         // Initialize API
-        $this->api = new Snippe_API($this->api_key, $this->test_mode);
+        $this->api = new Snippe_API($this->api_key);
         
         // Hooks
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -121,25 +110,10 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                 'default'     => __('Pay securely using Mobile Money, Credit/Debit Card, or QR Code via Snippe.', 'snippe-payment-gateway'),
                 'desc_tip'    => true,
             ),
-            'test_mode' => array(
-                'title'       => __('Test Mode', 'snippe-payment-gateway'),
-                'label'       => __('Enable Test Mode', 'snippe-payment-gateway'),
-                'type'        => 'checkbox',
-                'description' => __('Place the payment gateway in test mode using test API credentials.', 'snippe-payment-gateway'),
-                'default'     => 'yes',
-                'desc_tip'    => true,
-            ),
-            'test_api_key' => array(
-                'title'       => __('Test API Key', 'snippe-payment-gateway'),
+            'api_key' => array(
+                'title'       => __('API Key', 'snippe-payment-gateway'),
                 'type'        => 'password',
-                'description' => __('Get your API keys from your Snippe account dashboard.', 'snippe-payment-gateway'),
-                'default'     => '',
-                'desc_tip'    => true,
-            ),
-            'live_api_key' => array(
-                'title'       => __('Live API Key', 'snippe-payment-gateway'),
-                'type'        => 'password',
-                'description' => __('Get your API keys from your Snippe account dashboard.', 'snippe-payment-gateway'),
+                'description' => __('Get your API key from your Snippe account dashboard.', 'snippe-payment-gateway'),
                 'default'     => '',
                 'desc_tip'    => true,
             ),
@@ -161,7 +135,7 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                 'options'     => array(
                     'mobile'      => __('Mobile Money', 'snippe-payment-gateway'),
                     'card'        => __('Card Payment', 'snippe-payment-gateway'),
-                    'dynamic-qr'  => __('QR Code', 'snippe-payment-gateway'),
+                    // 'dynamic-qr'  => __('QR Code', 'snippe-payment-gateway'), // QR Code currently offline
                     'customer_choice' => __('Let Customer Choose', 'snippe-payment-gateway'),
                 ),
             ),
@@ -173,6 +147,17 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                 'desc_tip'    => true,
                 'options'     => array(
                     'authorize' => __('Authorize and Capture', 'snippe-payment-gateway'),
+                ),
+            ),
+            'successful_order_status' => array(
+                'title'       => __('Order Status After Payment', 'snippe-payment-gateway'),
+                'type'        => 'select',
+                'description' => __('Choose the order status after successful payment. Processing requires manual fulfillment, while Completed marks the order as finished.', 'snippe-payment-gateway'),
+                'default'     => 'processing',
+                'desc_tip'    => true,
+                'options'     => array(
+                    'processing' => __('Processing', 'snippe-payment-gateway'),
+                    'completed'  => __('Completed', 'snippe-payment-gateway'),
                 ),
             ),
             'order_prefix' => array(
@@ -211,7 +196,7 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                         <option value=""><?php echo esc_html__('Choose payment method', 'snippe-payment-gateway'); ?></option>
                         <option value="mobile"><?php echo esc_html__('Mobile Money', 'snippe-payment-gateway'); ?></option>
                         <option value="card"><?php echo esc_html__('Credit/Debit Card', 'snippe-payment-gateway'); ?></option>
-                        <option value="dynamic-qr"><?php echo esc_html__('QR Code', 'snippe-payment-gateway'); ?></option>
+                        <?php // <option value="dynamic-qr"><?php echo esc_html__('QR Code', 'snippe-payment-gateway'); ?></option> // QR Code currently offline ?>
                     </select>
                 </p>
                 
@@ -339,8 +324,8 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         $order->update_meta_data('_snippe_payment_reference', $payment['reference']);
         $order->update_meta_data('_snippe_payment_type', $payment_type);
         
-        // Update order status
-        $order->update_status('snippe-pending', __('Awaiting Snippe payment confirmation.', 'snippe-payment-gateway'));
+        // Update order status to pending payment
+        $order->update_status('pending', __('Awaiting Snippe payment confirmation.', 'snippe-payment-gateway'));
         
         // Reduce stock
         wc_reduce_stock_levels($order_id);
@@ -541,18 +526,4 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
         return $phone;
     }
     
-    /**
-     * Register block support
-     */
-    public function register_block_support() {
-        if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
-            require_once SNIPPE_PLUGIN_DIR . 'includes/class-snippe-blocks-support.php';
-            add_action(
-                'woocommerce_blocks_payment_method_type_registration',
-                function($payment_method_registry) {
-                    $payment_method_registry->register(new Snippe_Blocks_Support());
-                }
-            );
-        }
-    }
 }
