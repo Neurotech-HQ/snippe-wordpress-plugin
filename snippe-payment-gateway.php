@@ -3,7 +3,7 @@
  * Plugin Name: Snippe Payments for WooCommerce
  * Plugin URI: https://snippe.sh
  * Description: Accept payments via Snippe - Mobile Money, Card, and QR Code payments for WooCommerce
- * Version: 1.0.0
+ * Version: 1.2.0
  * Author: Snippe
  * Author URI: https://snippe.sh
  * Text Domain: snippe-payment-gateway
@@ -66,6 +66,23 @@ add_action('before_woocommerce_init', 'snippe_declare_compatibility');
 function snippe_declare_compatibility() {
     if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
+    }
+}
+
+/**
+ * Register block checkout support
+ */
+add_action('woocommerce_blocks_loaded', 'snippe_register_block_support');
+function snippe_register_block_support() {
+    if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
+        require_once SNIPPE_PLUGIN_DIR . 'includes/class-snippe-blocks-support.php';
+        add_action(
+            'woocommerce_blocks_payment_method_type_registration',
+            function ($payment_method_registry) {
+                $payment_method_registry->register(new Snippe_Blocks_Support());
+            }
+        );
     }
 }
 
@@ -109,45 +126,6 @@ function snippe_display_order_data_in_admin($order) {
         
         echo '</div>';
     }
-}
-
-/**
- * Register custom order status for pending payment
- */
-add_action('init', 'snippe_register_order_status');
-function snippe_register_order_status() {
-    register_post_status('wc-snippe-pending', array(
-        'label'                     => _x('Awaiting Snippe Payment', 'Order status', 'snippe-payment-gateway'),
-        'public'                    => true,
-        'exclude_from_search'       => false,
-        'show_in_admin_all_list'    => true,
-        'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop('Awaiting Snippe Payment <span class="count">(%s)</span>', 'Awaiting Snippe Payment <span class="count">(%s)</span>', 'snippe-payment-gateway')
-    ));
-}
-
-add_filter('wc_order_statuses', 'snippe_add_order_statuses');
-function snippe_add_order_statuses($order_statuses) {
-    $order_statuses['wc-snippe-pending'] = _x('Awaiting Snippe Payment', 'Order status', 'snippe-payment-gateway');
-    return $order_statuses;
-}
-
-/**
- * Add custom status to valid order statuses for payment
- */
-add_filter('woocommerce_valid_order_statuses_for_payment', 'snippe_valid_order_statuses_for_payment', 10, 2);
-function snippe_valid_order_statuses_for_payment($statuses, $order) {
-    $statuses[] = 'snippe-pending';
-    return $statuses;
-}
-
-/**
- * Mark custom status as unpaid
- */
-add_filter('woocommerce_order_is_paid_statuses', 'snippe_unpaid_order_statuses');
-function snippe_unpaid_order_statuses($statuses) {
-    // Don't include snippe-pending in paid statuses, so it's considered unpaid
-    return $statuses;
 }
 
 /**
