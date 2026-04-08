@@ -57,13 +57,12 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 
    - **Title**: Display name at checkout (default: "Mobile Money / Card / QR Payment")
    - **Description**: Payment method description for customers
-   - **Test Mode**: Enable for testing with test API keys
-   - **Test API Key**: Your Snippe test API key
    - **Live API Key**: Your Snippe production API key
    - **Webhook Secret**: Secret used to verify incoming webhook notifications (optional)
    - **Default Payment Type**: Choose default payment method or let customers choose
+   - **Order Status after Payment**: Choose the default order status after payment either processing or completed
    - **Order Prefix**: Prefix for order references sent to Snippe (default: "WC-")
-   - **Enable Logging**: Enable for debugging (logs saved in WooCommerce > Status > Logs)
+   - **Enable Logging**: Enable for debugging (logs saved in WooCommerce > Status > Logs) (disable in live environment)
 4. Save changes
 
 ### Webhooks
@@ -72,13 +71,13 @@ The webhook URL is automatically included in every payment request sent to Snipp
 
 If you have a webhook secret configured in your Snippe account, enter it in the **Webhook Secret** field so the plugin can verify that incoming notifications are genuinely from Snippe.
 
-### Important: Classic Checkout Required
+### Important: Classic Checkout Required (Versions Below 1.2.0)
 
-The plugin does not currently support the block-based checkout (the default in newer WooCommerce versions). To use it, remove the block-based checkout from your checkout page and add the classic shortcode instead:
+Versions below 1.2.0 do not support WooCommerce’s block-based checkout (the default in newer versions). To use the plugin, replace the block-based checkout on your checkout page with the classic shortcode:
 
-```
 [woocommerce_checkout]
-```
+
+From version 1.2.0 onwards, no additional configuration is required. The plugin is fully compatible with WooCommerce, including the block-based checkout.
 
 ## Usage
 
