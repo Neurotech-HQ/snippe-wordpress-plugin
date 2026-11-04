@@ -210,11 +210,13 @@ https://yourdomain.com/wc-api/snippe_webhook/
 
 ### Signature Verification
 
-Webhooks are verified using HMAC SHA256:
+Webhooks are verified with HMAC SHA256 of `{timestamp}.{raw body}`:
 
 ```php
-$computed_signature = hash_hmac('sha256', $payload, $secret);
-$is_valid = hash_equals($computed_signature, $signature);
+$timestamp = $_SERVER['HTTP_X_WEBHOOK_TIMESTAMP'] ?? '';
+$signature = $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? '';
+$computed_signature = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+$is_valid = hash_equals($computed_signature, strtolower($signature));
 ```
 
 ### Event Types

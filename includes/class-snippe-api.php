@@ -146,16 +146,40 @@ class Snippe_API {
     }
     
     /**
-     * Verify webhook signature
+     * Verify webhook signature.
      *
-     * @param string $payload Webhook payload
-     * @param string $signature Webhook signature
+     * Snippe signs "{timestamp}.{raw body}" and sends the hex in
+     * X-Webhook-Signature. Timestamps older or newer than 5 minutes are rejected.
+     *
+     * @param string $payload Raw request body
+     * @param string $signature X-Webhook-Signature
      * @param string $secret Webhook secret
-     * @return bool True if valid
+     * @param string $timestamp X-Webhook-Timestamp
+     * @return bool
      */
-    public static function verify_webhook_signature($payload, $signature, $secret) {
-        // Snippe uses HMAC SHA256 for webhook signatures
-        $computed_signature = hash_hmac('sha256', $payload, $secret);
-        return hash_equals($computed_signature, $signature);
+    public static function verify_webhook_signature($payload, $signature, $secret, $timestamp = '') {
+        if (!is_string($payload) || !is_string($signature) || !is_string($secret) || !is_string($timestamp)) {
+            return false;
+        }
+
+        if ($secret === '' || $signature === '' || !ctype_digit($timestamp)) {
+            return false;
+        }
+
+        if (abs(time() - (int) $timestamp) > 300) {
+            return false;
+        }
+
+        if (stripos($signature, 'sha256=') === 0) {
+            $signature = substr($signature, 7);
+        }
+
+        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+
+        if (strlen($signature) !== strlen($expected)) {
+            return false;
+        }
+
+        return hash_equals($expected, strtolower($signature));
     }
 }

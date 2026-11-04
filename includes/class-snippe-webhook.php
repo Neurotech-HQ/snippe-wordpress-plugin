@@ -25,10 +25,8 @@ class Snippe_Webhook {
         // Get the raw POST data
         $payload = file_get_contents('php://input');
         
-        // Log webhook received
         Snippe_Logger::log('Webhook received');
-        Snippe_Logger::log('Payload: ' . $payload);
-        
+
         // Verify content type
         $content_type = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
         if (strpos($content_type, 'application/json') === false) {
@@ -36,30 +34,31 @@ class Snippe_Webhook {
             status_header(400);
             exit('Invalid content type');
         }
-        
+
         // Decode payload
         $event = json_decode($payload, true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($event)) {
             Snippe_Logger::log('Invalid JSON payload');
             status_header(400);
             exit('Invalid JSON');
         }
-        
-        // Get webhook signature from headers
-        $signature = isset($_SERVER['HTTP_X_SNIPPE_SIGNATURE']) ? $_SERVER['HTTP_X_SNIPPE_SIGNATURE'] : '';
-        
-        // Get gateway settings
+
         $gateway = new WC_Gateway_Snippe();
-        $webhook_secret = $gateway->get_option('webhook_secret');
-        
-        // Verify signature if webhook secret is set
-        if (!empty($webhook_secret) && !empty($signature)) {
-            if (!Snippe_API::verify_webhook_signature($payload, $signature, $webhook_secret)) {
-                Snippe_Logger::log('Invalid webhook signature');
-                status_header(401);
-                exit('Invalid signature');
-            }
+        $webhook_secret = (string) $gateway->get_option('webhook_secret');
+        $signature = self::request_header('X-Webhook-Signature');
+        $timestamp = self::request_header('X-Webhook-Timestamp');
+
+        if ($webhook_secret === '') {
+            Snippe_Logger::log('Rejected webhook, secret is not set');
+            status_header(401);
+            exit('Invalid signature');
+        }
+
+        if (!Snippe_API::verify_webhook_signature($payload, $signature, $webhook_secret, $timestamp)) {
+            Snippe_Logger::log('Rejected webhook, bad signature');
+            status_header(401);
+            exit('Invalid signature');
         }
         
         // Process event
@@ -127,7 +126,13 @@ class Snippe_Webhook {
             Snippe_Logger::log('Order not found for payment reference: ' . $payment_reference);
             return;
         }
-        
+
+        if (!self::paid_amount_matches($order, $event)) {
+            Snippe_Logger::log('Rejected webhook, amount does not match order ' . $order->get_id());
+            status_header(400);
+            exit('Amount mismatch');
+        }
+
         Snippe_Logger::log('Found order ID: ' . $order->get_id() . ' with status: ' . $order->get_status());
         
         // Check if already processed
@@ -316,5 +321,49 @@ class Snippe_Webhook {
         }
         
         return null;
+    }
+
+    /**
+     * Read a request header.
+     *
+     * @param string $name
+     * @return string
+     */
+    private static function request_header($name) {
+        $server_key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        if (isset($_SERVER[$server_key]) && is_string($_SERVER[$server_key])) {
+            return trim($_SERVER[$server_key]);
+        }
+
+        if (function_exists('getallheaders')) {
+            foreach (getallheaders() as $header => $value) {
+                if (strcasecmp((string) $header, $name) === 0 && is_string($value)) {
+                    return trim($value);
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Signed amount and currency have to match the order.
+     *
+     * @param WC_Order $order
+     * @param array $event
+     * @return bool
+     */
+    private static function paid_amount_matches($order, $event) {
+        $amount = $event['data']['amount']['value'] ?? null;
+        $currency = $event['data']['amount']['currency'] ?? null;
+
+        if (!is_numeric($amount) || !is_string($currency) || $currency === '') {
+            return false;
+        }
+
+        $paid = (int) round((float) $amount);
+        $expected = (int) round((float) $order->get_total());
+
+        return $paid === $expected && strcasecmp($currency, (string) $order->get_currency()) === 0;
     }
 }
