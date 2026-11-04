@@ -47,7 +47,7 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 1. Log in to your [Snippe Dashboard](https://snippe.sh)
 2. Navigate to Settings > API Keys
 3. Copy your API key
-4. Copy your Webhook Secret (optional, used to verify webhook signatures)
+4. Copy your Webhook Secret (required, used to verify webhook signatures)
 
 ### 2. Configure the Plugin
 
@@ -58,7 +58,7 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
    - **Title**: Display name at checkout (default: "Mobile Money / Card / QR Payment")
    - **Description**: Payment method description for customers
    - **Live API Key**: Your Snippe production API key
-   - **Webhook Secret**: Secret used to verify incoming webhook notifications (optional)
+   - **Webhook Secret**: Required. Secret used to verify incoming webhook notifications
    - **Default Payment Type**: Choose default payment method or let customers choose
    - **Order Status after Payment**: Choose the default order status after payment either processing or completed
    - **Order Prefix**: Prefix for order references sent to Snippe (default: "WC-")
@@ -69,7 +69,7 @@ The Snippe Payment Gateway plugin enables you to accept payments through multipl
 
 The webhook URL is automatically included in every payment request sent to Snippe. There is no need to configure a webhook URL on the Snippe dashboard.
 
-If you have a webhook secret configured in your Snippe account, enter it in the **Webhook Secret** field so the plugin can verify that incoming notifications are genuinely from Snippe.
+Put the webhook secret from the Snippe dashboard in **Webhook Secret**. The plugin ignores notifications until that is set.
 
 ### Important: Classic Checkout Required (Versions Below 1.2.0)
 
@@ -192,7 +192,7 @@ Ensure the phone number is between 9 and 15 digits. The plugin accepts local for
 
 - All API communications use HTTPS
 - API keys are stored securely in the WordPress database
-- Webhook signatures are verified using HMAC SHA256 (when a webhook secret is configured, requests without a valid signature are rejected)
+- Webhook signatures are verified with HMAC SHA256. The webhook secret is required, and the paid amount has to match the order.
 - Idempotency keys prevent duplicate payments
 - Sensitive customer data is redacted in logs
 

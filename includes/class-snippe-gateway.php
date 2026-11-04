@@ -121,7 +121,7 @@ class WC_Gateway_Snippe extends WC_Payment_Gateway {
                 'title'       => __('Webhook Secret', 'snippe-payment-gateway'),
                 'type'        => 'password',
                 'description' => sprintf(
-                    __('Your webhook URL is: %s', 'snippe-payment-gateway'),
+                    __('Required. Your webhook URL is: %s', 'snippe-payment-gateway'),
                     '<code>' . home_url('/wc-api/snippe_webhook/') . '</code>'
                 ),
                 'default'     => '',

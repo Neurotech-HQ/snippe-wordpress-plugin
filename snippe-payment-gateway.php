@@ -3,7 +3,7 @@
  * Plugin Name: Snippe Payments for WooCommerce
  * Plugin URI: https://snippe.sh
  * Description: Accept payments via Snippe - Mobile Money, Card, and QR Code payments for WooCommerce
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Snippe
  * Author URI: https://snippe.sh
  * Text Domain: snippe-payment-gateway
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SNIPPE_VERSION', '1.0.0');
+define('SNIPPE_VERSION', '1.2.1');
 define('SNIPPE_PLUGIN_FILE', __FILE__);
 define('SNIPPE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SNIPPE_PLUGIN_URL', plugin_dir_url(__FILE__));
